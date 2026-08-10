@@ -20,6 +20,13 @@
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome"></a>
 </p>
 
+<p align="center">
+  <a href="https://f-droid.org/packages/com.shubhang.loophole">
+    <img src="https://f-droid.org/badge/get-it-on.png" alt="Get it on F-Droid" height="80">
+  </a>
+</p>
+
+
 ---
 
 ## The problem
