@@ -125,4 +125,22 @@ class DevSettingsRepositoryTest {
 
         assertTrue(repository.isEnabled.first())
     }
+
+    @Test
+    fun `toggling USB debugging writes to USB_DEBUGGING setting`() = runTest {
+        val result = repository.toggle(SecureSetting.USB_DEBUGGING)
+
+        assertEquals(SettingsWriteResult.Success(isEnabled = true), result)
+        assertTrue(source.read(SecureSetting.USB_DEBUGGING))
+        assertTrue(repository.isUsbDebuggingEnabled.first())
+    }
+
+    @Test
+    fun `toggling Wireless debugging writes to WIRELESS_DEBUGGING setting`() = runTest {
+        val result = repository.toggle(SecureSetting.WIRELESS_DEBUGGING)
+
+        assertEquals(SettingsWriteResult.Success(isEnabled = true), result)
+        assertTrue(source.read(SecureSetting.WIRELESS_DEBUGGING))
+        assertTrue(repository.isWirelessDebuggingEnabled.first())
+    }
 }
