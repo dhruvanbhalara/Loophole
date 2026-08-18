@@ -86,6 +86,9 @@ class LoopholeWidget : GlanceAppWidget() {
         val SMALL_SIZE = DpSize(120.dp, 48.dp)
         val MEDIUM_SIZE = DpSize(200.dp, 48.dp)
         val LARGE_SIZE = DpSize(280.dp, 48.dp)
+
+        /** Breakpoint at which the widget expands to reveal USB and Wireless debugging buttons. */
+        val EXPANDED_WIDTH_THRESHOLD = 195.dp
     }
 }
 
@@ -96,7 +99,7 @@ private fun AdaptiveWidgetBody(
     wirelessEnabled: Boolean,
 ) {
     val size = LocalSize.current
-    val isExpanded = size.width >= 195.dp
+    val isExpanded = size.width >= LoopholeWidget.EXPANDED_WIDTH_THRESHOLD
 
     if (isExpanded) {
         ExpandedWidgetContent(devEnabled, usbEnabled, wirelessEnabled)
@@ -115,6 +118,7 @@ private fun CompactWidgetContent(enabled: Boolean) {
     val context = LocalContext.current
     val toggleDevIntent = Intent(context, ToggleReceiver::class.java).apply {
         action = ToggleReceiver.ACTION_TOGGLE_DEV_MODE
+        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.DEV_OPTIONS.name)
     }
 
     Row(
@@ -183,12 +187,15 @@ private fun ExpandedWidgetContent(devEnabled: Boolean, usbEnabled: Boolean, wire
     val context = LocalContext.current
     val toggleDevIntent = Intent(context, ToggleReceiver::class.java).apply {
         action = ToggleReceiver.ACTION_TOGGLE_DEV_MODE
+        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.DEV_OPTIONS.name)
     }
     val toggleUsbIntent = Intent(context, ToggleReceiver::class.java).apply {
         action = ToggleReceiver.ACTION_TOGGLE_USB_DEBUG
+        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.USB_DEBUGGING.name)
     }
     val toggleWirelessIntent = Intent(context, ToggleReceiver::class.java).apply {
         action = ToggleReceiver.ACTION_TOGGLE_WIRELESS_DEBUG
+        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.WIRELESS_DEBUGGING.name)
     }
 
     Row(

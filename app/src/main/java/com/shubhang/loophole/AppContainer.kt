@@ -27,17 +27,15 @@ class AppContainer(context: Context) {
     val widgetUpdater: WidgetUpdater by lazy { WidgetUpdater(appContext) }
 
     /**
-     * The widget cannot subscribe to a Flow — it is only alive while being
-     * rendered — so every successful write pushes the new value into it here,
-     * rather than at each of the call sites that toggle.
-     * In addition, an observer flow updates the widget on external setting changes.
+     * Unified setting repository. State changes across all three settings
+     * (whether in-app, from QS tiles, via ADB, or in system Settings) trigger
+     * widget refresh via the application-scoped observer below.
      */
     val devSettings: DevSettingsRepository by lazy {
         DevSettingsRepository(
             source = secureSettings,
-            onChanged = { widgetUpdater.refresh() },
+            onChanged = { widgetUpdater.refresh() }
         ).also { repo ->
-            // Keep widgets in sync with changes made outside the app (Settings app, ADB, QS tiles)
             appScope.launch {
                 combine(
                     repo.isEnabled,

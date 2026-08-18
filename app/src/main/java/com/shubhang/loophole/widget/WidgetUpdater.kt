@@ -31,8 +31,4 @@ class WidgetUpdater(context: Context) {
             widget.update(appContext, id)
         }
     }
-
-    suspend fun refresh(isEnabled: Boolean) {
-        refresh()
-    }
 }

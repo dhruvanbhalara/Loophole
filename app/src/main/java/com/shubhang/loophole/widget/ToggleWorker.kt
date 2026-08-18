@@ -26,6 +26,7 @@ class ToggleWorker(
         val settingName = inputData.getString(KEY_SETTING) ?: SecureSetting.DEV_OPTIONS.name
         val setting = runCatching { SecureSetting.valueOf(settingName) }.getOrDefault(SecureSetting.DEV_OPTIONS)
         applicationContext.appContainer.devSettings.toggle(setting)
+        applicationContext.appContainer.widgetUpdater.refresh()
         return Result.success()
     }
 
