@@ -10,14 +10,17 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -42,7 +45,7 @@ fun Header() {
             fontWeight = FontWeight.Bold
         )
         Text(
-            text = "One-tap Developer Options",
+            text = "Developer & Debugging Toggles",
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -152,6 +155,128 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
 }
 
 @Composable
+fun SecondaryToggleCard(
+    title: String,
+    subtitle: String,
+    iconRes: Int,
+    enabled: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    isSupported: Boolean = true,
+    unsupportedBadge: String? = null,
+    canAddTile: Boolean = false,
+    onAddTile: (() -> Unit)? = null,
+) {
+    val containerColor by animateColorAsState(
+        targetValue = if (enabled && isSupported) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        },
+        label = "secContainer"
+    )
+    val contentColor by animateColorAsState(
+        targetValue = if (enabled && isSupported) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurface
+        },
+        label = "secContent"
+    )
+    val iconBadgeColor by animateColorAsState(
+        targetValue = if (enabled && isSupported) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.surfaceContainerHighest
+        },
+        label = "secIconBadge"
+    )
+
+    ElevatedCard(
+        onClick = { if (isSupported) onToggle() },
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(iconBadgeColor),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(iconRes),
+                        contentDescription = null,
+                        tint = if (enabled && isSupported) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+
+                Spacer(Modifier.width(14.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    if (!isSupported && unsupportedBadge != null) {
+                        Text(
+                            text = unsupportedBadge,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    } else {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = contentColor.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            }
+
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                if (canAddTile && onAddTile != null && isSupported) {
+                    IconButton(onClick = onAddTile) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_check),
+                            contentDescription = "Add Quick Settings Tile",
+                            tint = contentColor.copy(alpha = 0.7f),
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+                Switch(
+                    checked = enabled && isSupported,
+                    enabled = isSupported,
+                    onCheckedChange = { if (isSupported) onToggle() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun PermissionCard(packageName: String) {
     ElevatedCard(
         shape = RoundedCornerShape(24.dp),
@@ -216,13 +341,12 @@ fun HowToCard() {
                 fontWeight = FontWeight.Bold
             )
             TipRow(
-                title = "Quick Settings tile",
-                body = "Pull down the shade, tap Edit, and drag in the \"Dev Mode\" tile."
+                title = "Quick Settings tiles",
+                body = "Pull down the shade and tap Edit to add Dev Mode, USB Debugging, and Wireless Debugging tiles."
             )
             TipRow(
-                title = "Home-screen widget",
-                body = "Long-press the home screen, choose Widgets, and add Loophole. " +
-                    "Tap it to toggle; tap the gear to open Developer Options."
+                title = "Adaptive home-screen widget",
+                body = "Add the Loophole widget to your home screen. Resize it horizontally to expose USB and Wireless debugging buttons directly."
             )
         }
     }

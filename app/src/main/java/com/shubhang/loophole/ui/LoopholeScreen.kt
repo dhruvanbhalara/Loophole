@@ -32,11 +32,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.shubhang.loophole.R
 import com.shubhang.loophole.settings.AddTileResult
+import com.shubhang.loophole.settings.TileType
 import com.shubhang.loophole.ui.components.Header
 import com.shubhang.loophole.ui.components.HeroToggleCard
 import com.shubhang.loophole.ui.components.HowToCard
 import com.shubhang.loophole.ui.components.LoopholeSnackbar
 import com.shubhang.loophole.ui.components.PermissionCard
+import com.shubhang.loophole.ui.components.SecondaryToggleCard
 
 /**
  * Stateless: renders [uiState] and reports events, so it is previewable and
@@ -47,23 +49,26 @@ fun LoopholeScreen(
     uiState: DevSettingsUiState,
     packageName: String,
     canAddQuickSettingsTile: Boolean,
-    onToggle: () -> Unit,
+    onToggleDevOptions: () -> Unit,
+    onToggleUsbDebugging: () -> Unit,
+    onToggleWirelessDebugging: () -> Unit,
     onOpenDeveloperOptions: () -> Unit,
-    onAddQuickSettingsTile: () -> Unit,
-    addTileResult: AddTileResult? = null,
+    onAddQuickSettingsTile: (TileType) -> Unit,
+    addTileResult: Pair<TileType, AddTileResult>? = null,
     onAddTileResultShown: () -> Unit = {},
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Kept separately from addTileResult so the snackbar keeps its icon for the
-    // whole time it is on screen, not just until the event is consumed.
     var shown by remember { mutableStateOf<AddTileResult?>(null) }
 
-    val message = addTileResult?.messageRes()?.let { stringResource(it) }
+    val message = addTileResult?.let { (tileType, result) ->
+        result.messageRes(tileType)?.let { stringResource(it) }
+    }
+
     LaunchedEffect(addTileResult) {
         if (addTileResult == null) return@LaunchedEffect
         if (message != null) {
-            shown = addTileResult
+            shown = addTileResult.second
             snackbarHostState.showSnackbar(message)
             shown = null
         }
@@ -83,20 +88,20 @@ fun LoopholeScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(padding)
                 .padding(horizontal = 24.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Header()
 
             HeroToggleCard(
                 enabled = uiState.isEnabled,
-                onToggle = onToggle
+                onToggle = onToggleDevOptions
             )
 
             FilledTonalButton(
                 onClick = onOpenDeveloperOptions,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(54.dp),
                 shape = RoundedCornerShape(20.dp)
             ) {
                 Icon(
@@ -108,15 +113,37 @@ fun LoopholeScreen(
                 Text("Open Developer Options", fontWeight = FontWeight.SemiBold)
             }
 
+            SecondaryToggleCard(
+                title = "USB Debugging",
+                subtitle = if (uiState.isUsbDebuggingEnabled) "Enabled" else "Disabled",
+                iconRes = R.drawable.ic_usb_tile,
+                enabled = uiState.isUsbDebuggingEnabled,
+                onToggle = onToggleUsbDebugging,
+                canAddTile = canAddQuickSettingsTile,
+                onAddTile = { onAddQuickSettingsTile(TileType.USB_DEBUG) }
+            )
+
+            SecondaryToggleCard(
+                title = "Wireless Debugging",
+                subtitle = if (uiState.isWirelessDebuggingEnabled) "Enabled" else "Disabled",
+                iconRes = R.drawable.ic_wireless_tile,
+                enabled = uiState.isWirelessDebuggingEnabled,
+                onToggle = onToggleWirelessDebugging,
+                isSupported = uiState.isWirelessDebuggingSupported,
+                unsupportedBadge = stringResource(R.string.requires_android_11),
+                canAddTile = canAddQuickSettingsTile,
+                onAddTile = { onAddQuickSettingsTile(TileType.WIRELESS_DEBUG) }
+            )
+
             if (canAddQuickSettingsTile) {
                 OutlinedButton(
-                    onClick = onAddQuickSettingsTile,
+                    onClick = { onAddQuickSettingsTile(TileType.DEV_MODE) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(52.dp),
+                        .height(50.dp),
                     shape = RoundedCornerShape(20.dp)
                 ) {
-                    Text("Add tile to Quick Settings", fontWeight = FontWeight.SemiBold)
+                    Text("Add Dev Mode tile to Quick Settings", fontWeight = FontWeight.SemiBold)
                 }
             }
 
@@ -129,10 +156,17 @@ fun LoopholeScreen(
     }
 }
 
-/** Dismissal is the user's own doing, so it passes without a message. */
-private fun AddTileResult.messageRes(): Int? = when (this) {
-    AddTileResult.ADDED -> R.string.tile_add_added
-    AddTileResult.ALREADY_ADDED -> R.string.tile_add_already_added
+private fun AddTileResult.messageRes(tileType: TileType): Int? = when (this) {
+    AddTileResult.ADDED -> when (tileType) {
+        TileType.DEV_MODE -> R.string.tile_add_added
+        TileType.USB_DEBUG -> R.string.tile_usb_add_added
+        TileType.WIRELESS_DEBUG -> R.string.tile_wireless_add_added
+    }
+    AddTileResult.ALREADY_ADDED -> when (tileType) {
+        TileType.DEV_MODE -> R.string.tile_add_already_added
+        TileType.USB_DEBUG -> R.string.tile_usb_add_already_added
+        TileType.WIRELESS_DEBUG -> R.string.tile_wireless_add_already_added
+    }
     AddTileResult.FAILED -> R.string.tile_add_failed
     AddTileResult.DISMISSED -> null
 }
