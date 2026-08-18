@@ -85,13 +85,22 @@ class DevSettingsRepositoryTest {
     }
 
     @Test
-    fun `disabling leaves the debugging flags untouched`() = runTest {
+    fun `disabling dev options also clears both debugging flags`() = runTest {
         source.emitExternalChange(SecureSetting.USB_DEBUGGING, true)
+        source.emitExternalChange(SecureSetting.WIRELESS_DEBUGGING, true)
 
         repository.setEnabled(false)
 
-        assertEquals(listOf(SecureSetting.DEV_OPTIONS to false), source.writes)
-        assertTrue(source.read(SecureSetting.USB_DEBUGGING))
+        assertFalse(source.read(SecureSetting.USB_DEBUGGING))
+        assertFalse(source.read(SecureSetting.WIRELESS_DEBUGGING))
+        assertEquals(
+            listOf(
+                SecureSetting.USB_DEBUGGING to false,
+                SecureSetting.WIRELESS_DEBUGGING to false,
+                SecureSetting.DEV_OPTIONS to false,
+            ),
+            source.writes
+        )
     }
 
     @Test

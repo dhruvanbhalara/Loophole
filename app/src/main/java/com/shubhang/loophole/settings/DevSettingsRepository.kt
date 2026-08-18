@@ -45,10 +45,10 @@ class DevSettingsRepository(
         setEnabled(SecureSetting.DEV_OPTIONS, enabled)
 
     suspend fun setEnabled(setting: SecureSetting, enabled: Boolean): SettingsWriteResult = withContext(ioDispatcher) {
-        if (setting == SecureSetting.DEV_OPTIONS && enabled) {
-            // Clear the debugging flags first, so switching Developer Options on
-            // never also restores a USB or wireless debugging session that was
-            // left enabled from last time.
+        if (setting == SecureSetting.DEV_OPTIONS) {
+            // When toggling Developer Options (both ON and OFF), ensure USB and Wireless
+            // debugging flags are disabled so turning Dev Options OFF fully shuts down
+            // all debugging sessions, and turning it ON starts clean.
             for (debugSetting in SecureSetting.DEBUGGING) {
                 if (!source.write(debugSetting, false)) {
                     return@withContext SettingsWriteResult.PermissionDenied
