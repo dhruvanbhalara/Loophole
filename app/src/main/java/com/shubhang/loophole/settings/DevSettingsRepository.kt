@@ -76,6 +76,13 @@ class DevSettingsRepository(
             }
         }
 
+        if (setting in SecureSetting.DEBUGGING && enabled) {
+            // Secondary debugging flags cannot be enabled when Developer Options is disabled.
+            if (!currentValue(SecureSetting.DEV_OPTIONS)) {
+                return@withContext SettingsWriteResult.Success(isEnabled = false)
+            }
+        }
+
         if (!source.write(setting, enabled)) {
             return@withContext SettingsWriteResult.PermissionDenied
         }

@@ -64,9 +64,11 @@ class DevSettingsViewModelTest {
     }
 
     @Test
-    fun `onToggleUsbDebugging toggles usb debugging state`() = runTest(testDispatcher) {
+    fun `onToggleUsbDebugging toggles usb debugging state when dev options enabled`() = runTest(testDispatcher) {
         val viewModel = viewModel()
         collecting(viewModel)
+
+        source.emitExternalChange(SecureSetting.DEV_OPTIONS, true)
 
         viewModel.onToggleUsbDebugging()
 
@@ -80,14 +82,42 @@ class DevSettingsViewModelTest {
     }
 
     @Test
-    fun `onToggleWirelessDebugging toggles wireless debugging state`() = runTest(testDispatcher) {
+    fun `onToggleWirelessDebugging toggles wireless debugging state when dev options enabled`() = runTest(testDispatcher) {
         val viewModel = viewModel()
         collecting(viewModel)
+
+        source.emitExternalChange(SecureSetting.DEV_OPTIONS, true)
 
         viewModel.onToggleWirelessDebugging()
 
         assertTrue(viewModel.uiState.value.isWirelessDebuggingEnabled)
         assertTrue(source.read(SecureSetting.WIRELESS_DEBUGGING))
+
+        viewModel.onToggleWirelessDebugging()
+
+        assertFalse(viewModel.uiState.value.isWirelessDebuggingEnabled)
+        assertFalse(source.read(SecureSetting.WIRELESS_DEBUGGING))
+    }
+
+    @Test
+    fun `onToggleUsbDebugging does nothing when dev options disabled`() = runTest(testDispatcher) {
+        val viewModel = viewModel()
+        collecting(viewModel)
+
+        source.emitExternalChange(SecureSetting.DEV_OPTIONS, false)
+
+        viewModel.onToggleUsbDebugging()
+
+        assertFalse(viewModel.uiState.value.isUsbDebuggingEnabled)
+        assertFalse(source.read(SecureSetting.USB_DEBUGGING))
+    }
+
+    @Test
+    fun `onToggleWirelessDebugging does nothing when dev options disabled`() = runTest(testDispatcher) {
+        val viewModel = viewModel()
+        collecting(viewModel)
+
+        source.emitExternalChange(SecureSetting.DEV_OPTIONS, false)
 
         viewModel.onToggleWirelessDebugging()
 

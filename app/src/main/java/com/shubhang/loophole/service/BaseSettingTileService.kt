@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
@@ -40,7 +41,16 @@ abstract class BaseSettingTileService(
             return
         }
         listeningJob = serviceScope.launch {
-            devSettings.observe(setting).collect(::renderTile)
+            if (setting in SecureSetting.DEBUGGING) {
+                combine(
+                    devSettings.observe(SecureSetting.DEV_OPTIONS),
+                    devSettings.observe(setting)
+                ) { devEnabled, settingEnabled ->
+                    devEnabled && settingEnabled
+                }.collect(::renderTile)
+            } else {
+                devSettings.observe(setting).collect(::renderTile)
+            }
         }
     }
 
@@ -60,6 +70,11 @@ abstract class BaseSettingTileService(
         if (!setting.isSupportedOnCurrentSdk) return
 
         serviceScope.launch {
+            if (setting in SecureSetting.DEBUGGING && !devSettings.currentValue(SecureSetting.DEV_OPTIONS)) {
+                openApp()
+                return@launch
+            }
+
             if (devSettings.toggle(setting) is SettingsWriteResult.PermissionDenied) {
                 openApp()
             }

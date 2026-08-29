@@ -223,9 +223,10 @@ private fun ExpandedWidgetContent(devEnabled: Boolean, usbEnabled: Boolean, wire
         // USB Debugging Segment
         WidgetActionSegment(
             title = "USB",
-            statusText = if (usbEnabled) "ON" else "OFF",
+            statusText = if (devEnabled && usbEnabled) "ON" else "OFF",
             iconRes = R.drawable.ic_usb_tile,
-            isActive = usbEnabled,
+            isActive = devEnabled && usbEnabled,
+            isEnabled = devEnabled,
             onClick = toggleUsbIntent,
             modifier = GlanceModifier.defaultWeight()
         )
@@ -235,9 +236,10 @@ private fun ExpandedWidgetContent(devEnabled: Boolean, usbEnabled: Boolean, wire
         // Wireless Debugging Segment
         WidgetActionSegment(
             title = "Wireless",
-            statusText = if (wirelessEnabled) "ON" else "OFF",
+            statusText = if (devEnabled && wirelessEnabled) "ON" else "OFF",
             iconRes = R.drawable.ic_wireless_tile,
-            isActive = wirelessEnabled,
+            isActive = devEnabled && wirelessEnabled,
+            isEnabled = devEnabled,
             onClick = toggleWirelessIntent,
             modifier = GlanceModifier.defaultWeight()
         )
@@ -270,17 +272,24 @@ private fun WidgetActionSegment(
     iconRes: Int,
     isActive: Boolean,
     onClick: Intent,
+    isEnabled: Boolean = true,
     modifier: GlanceModifier = GlanceModifier,
 ) {
-    val bg = if (isActive) GlanceTheme.colors.primary else GlanceTheme.colors.surface
-    val fg = if (isActive) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
+    val bg = if (isActive && isEnabled) GlanceTheme.colors.primary else GlanceTheme.colors.surface
+    val fg = if (isActive && isEnabled) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
+
+    val clickModifier = if (isEnabled) {
+        GlanceModifier.clickable(actionSendBroadcast(onClick))
+    } else {
+        GlanceModifier
+    }
 
     Row(
         modifier = modifier
             .fillMaxHeight()
             .background(bg)
             .cornerRadius(18.dp)
-            .clickable(actionSendBroadcast(onClick))
+            .then(clickModifier)
             .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalAlignment = Alignment.CenterHorizontally

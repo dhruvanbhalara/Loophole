@@ -219,6 +219,7 @@ fun HeroToggleContainer(
                     enabled = usbEnabled,
                     onToggle = onToggleUsb,
                     parentContentColor = contentColor,
+                    isParentEnabled = devEnabled,
                     canAddTile = canAddTile,
                     onAddTile = onAddUsbTile
                 )
@@ -236,6 +237,7 @@ fun HeroToggleContainer(
                     iconRes = R.drawable.ic_wireless_tile,
                     enabled = wirelessEnabled,
                     onToggle = onToggleWireless,
+                    isParentEnabled = devEnabled,
                     isSupported = isWirelessSupported,
                     unsupportedBadge = if (!isWirelessSupported) stringResource(R.string.requires_android_11) else null,
                     parentContentColor = contentColor,
@@ -257,15 +259,19 @@ private fun IntegratedToggleRow(
     onToggle: () -> Unit,
     parentContentColor: Color,
     modifier: Modifier = Modifier,
+    isParentEnabled: Boolean = true,
     isSupported: Boolean = true,
     unsupportedBadge: String? = null,
     onOpenSettings: (() -> Unit)? = null,
     canAddTile: Boolean = false,
     onAddTile: (() -> Unit)? = null,
 ) {
+    val isInteractive = isParentEnabled && isSupported
+    val effectiveContentColor = if (isParentEnabled) parentContentColor else parentContentColor.copy(alpha = 0.38f)
+
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = parentContentColor.copy(alpha = 0.08f),
+        color = effectiveContentColor.copy(alpha = 0.08f),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
@@ -281,10 +287,10 @@ private fun IntegratedToggleRow(
                     .weight(1f)
                     .clip(RoundedCornerShape(12.dp))
                     .then(
-                        if (onOpenSettings != null && isSupported) {
+                        if (onOpenSettings != null && isInteractive) {
                             Modifier.clickable { onOpenSettings() }
                         } else {
-                            Modifier.clickable(enabled = isSupported) { onToggle() }
+                            Modifier.clickable(enabled = isInteractive) { onToggle() }
                         }
                     )
                     .padding(vertical = 4.dp, horizontal = 2.dp)
@@ -294,10 +300,10 @@ private fun IntegratedToggleRow(
                         .size(38.dp)
                         .clip(CircleShape)
                         .background(
-                            if (enabled && isSupported) {
+                            if (enabled && isInteractive) {
                                 MaterialTheme.colorScheme.primary
                             } else {
-                                parentContentColor.copy(alpha = 0.12f)
+                                effectiveContentColor.copy(alpha = 0.12f)
                             }
                         ),
                     contentAlignment = Alignment.Center
@@ -305,10 +311,10 @@ private fun IntegratedToggleRow(
                     Icon(
                         painter = painterResource(iconRes),
                         contentDescription = null,
-                        tint = if (enabled && isSupported) {
+                        tint = if (enabled && isInteractive) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
-                            parentContentColor.copy(alpha = 0.7f)
+                            effectiveContentColor.copy(alpha = 0.7f)
                         },
                         modifier = Modifier.size(20.dp)
                     )
@@ -328,13 +334,13 @@ private fun IntegratedToggleRow(
                             text = title,
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
-                            color = parentContentColor
+                            color = effectiveContentColor
                         )
-                        if (onOpenSettings != null && isSupported) {
+                        if (onOpenSettings != null && isInteractive) {
                             Icon(
                                 painter = painterResource(R.drawable.ic_chevron_right),
                                 contentDescription = "Open $title Settings",
-                                tint = parentContentColor.copy(alpha = 0.6f),
+                                tint = effectiveContentColor.copy(alpha = 0.6f),
                                 modifier = Modifier.size(16.dp)
                             )
                         }
@@ -345,11 +351,17 @@ private fun IntegratedToggleRow(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
+                    } else if (!isParentEnabled) {
+                        Text(
+                            text = "Requires Developer Options",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = effectiveContentColor.copy(alpha = 0.7f)
+                        )
                     } else {
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = parentContentColor.copy(alpha = 0.7f)
+                            color = effectiveContentColor.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -359,7 +371,7 @@ private fun IntegratedToggleRow(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (canAddTile && onAddTile != null && isSupported) {
+                if (canAddTile && onAddTile != null && isInteractive) {
                     IconButton(
                         onClick = onAddTile,
                         modifier = Modifier.size(36.dp)
@@ -367,15 +379,15 @@ private fun IntegratedToggleRow(
                         Icon(
                             painter = painterResource(R.drawable.ic_check),
                             contentDescription = "Add Quick Settings Tile",
-                            tint = parentContentColor.copy(alpha = 0.7f),
+                            tint = effectiveContentColor.copy(alpha = 0.7f),
                             modifier = Modifier.size(18.dp)
                         )
                     }
                 }
                 Switch(
-                    checked = enabled && isSupported,
-                    enabled = isSupported,
-                    onCheckedChange = { if (isSupported) onToggle() }
+                    checked = enabled && isInteractive,
+                    enabled = isInteractive,
+                    onCheckedChange = { if (isInteractive) onToggle() }
                 )
             }
         }
