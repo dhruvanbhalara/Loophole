@@ -2,18 +2,13 @@ package com.shubhang.loophole.ui
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -26,7 +21,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -34,11 +28,10 @@ import com.shubhang.loophole.R
 import com.shubhang.loophole.settings.AddTileResult
 import com.shubhang.loophole.settings.TileType
 import com.shubhang.loophole.ui.components.Header
-import com.shubhang.loophole.ui.components.HeroToggleCard
+import com.shubhang.loophole.ui.components.HeroToggleContainer
 import com.shubhang.loophole.ui.components.HowToCard
 import com.shubhang.loophole.ui.components.LoopholeSnackbar
 import com.shubhang.loophole.ui.components.PermissionCard
-import com.shubhang.loophole.ui.components.SecondaryToggleCard
 
 /**
  * Stateless: renders [uiState] and reports events, so it is previewable and
@@ -53,6 +46,7 @@ fun LoopholeScreen(
     onToggleUsbDebugging: () -> Unit,
     onToggleWirelessDebugging: () -> Unit,
     onOpenDeveloperOptions: () -> Unit,
+    onOpenWirelessDebugging: () -> Unit,
     onAddQuickSettingsTile: (TileType) -> Unit,
     addTileResult: Pair<TileType, AddTileResult>? = null,
     onAddTileResultShown: () -> Unit = {},
@@ -92,47 +86,19 @@ fun LoopholeScreen(
         ) {
             Header()
 
-            HeroToggleCard(
-                enabled = uiState.isEnabled,
-                onToggle = onToggleDevOptions
-            )
-
-            FilledTonalButton(
-                onClick = onOpenDeveloperOptions,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(54.dp),
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_settings_gear),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(10.dp))
-                Text("Open Developer Options", fontWeight = FontWeight.SemiBold)
-            }
-
-            SecondaryToggleCard(
-                title = "USB Debugging",
-                subtitle = if (uiState.isUsbDebuggingEnabled) "Enabled" else "Disabled",
-                iconRes = R.drawable.ic_usb_tile,
-                enabled = uiState.isUsbDebuggingEnabled,
-                onToggle = onToggleUsbDebugging,
+            HeroToggleContainer(
+                devEnabled = uiState.isEnabled,
+                onToggleDev = onToggleDevOptions,
+                onOpenDeveloperOptions = onOpenDeveloperOptions,
+                usbEnabled = uiState.isUsbDebuggingEnabled,
+                onToggleUsb = onToggleUsbDebugging,
+                wirelessEnabled = uiState.isWirelessDebuggingEnabled,
+                onToggleWireless = onToggleWirelessDebugging,
+                isWirelessSupported = uiState.isWirelessDebuggingSupported,
+                onOpenWirelessDebugging = onOpenWirelessDebugging,
                 canAddTile = canAddQuickSettingsTile,
-                onAddTile = { onAddQuickSettingsTile(TileType.USB_DEBUG) }
-            )
-
-            SecondaryToggleCard(
-                title = "Wireless Debugging",
-                subtitle = if (uiState.isWirelessDebuggingEnabled) "Enabled" else "Disabled",
-                iconRes = R.drawable.ic_wireless_tile,
-                enabled = uiState.isWirelessDebuggingEnabled,
-                onToggle = onToggleWirelessDebugging,
-                isSupported = uiState.isWirelessDebuggingSupported,
-                unsupportedBadge = stringResource(R.string.requires_android_11),
-                canAddTile = canAddQuickSettingsTile,
-                onAddTile = { onAddQuickSettingsTile(TileType.WIRELESS_DEBUG) }
+                onAddUsbTile = { onAddQuickSettingsTile(TileType.USB_DEBUG) },
+                onAddWirelessTile = { onAddQuickSettingsTile(TileType.WIRELESS_DEBUG) }
             )
 
             if (canAddQuickSettingsTile) {

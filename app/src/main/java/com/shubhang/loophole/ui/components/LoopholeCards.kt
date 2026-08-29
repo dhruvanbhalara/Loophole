@@ -6,12 +6,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -19,6 +21,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -30,7 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -52,10 +58,31 @@ fun Header() {
     }
 }
 
+/**
+ * Unified Hero Toggle Container encapsulating:
+ * 1. Master Developer Options toggle with live state.
+ * 2. System Settings navigation shortcut.
+ * 3. Integrated USB Debugging row.
+ * 4. Integrated Wireless Debugging row with direct system settings deep-link.
+ */
 @Composable
-fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
+fun HeroToggleContainer(
+    devEnabled: Boolean,
+    onToggleDev: () -> Unit,
+    onOpenDeveloperOptions: () -> Unit,
+    usbEnabled: Boolean,
+    onToggleUsb: () -> Unit,
+    wirelessEnabled: Boolean,
+    onToggleWireless: () -> Unit,
+    isWirelessSupported: Boolean,
+    onOpenWirelessDebugging: () -> Unit,
+    canAddTile: Boolean,
+    onAddUsbTile: () -> Unit,
+    onAddWirelessTile: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val containerColor by animateColorAsState(
-        targetValue = if (enabled) {
+        targetValue = if (devEnabled) {
             MaterialTheme.colorScheme.primaryContainer
         } else {
             MaterialTheme.colorScheme.surfaceContainerHighest
@@ -63,7 +90,7 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
         label = "heroContainer"
     )
     val contentColor by animateColorAsState(
-        targetValue = if (enabled) {
+        targetValue = if (devEnabled) {
             MaterialTheme.colorScheme.onPrimaryContainer
         } else {
             MaterialTheme.colorScheme.onSurface
@@ -71,7 +98,7 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
         label = "heroContent"
     )
     val iconBadgeColor by animateColorAsState(
-        targetValue = if (enabled) {
+        targetValue = if (devEnabled) {
             MaterialTheme.colorScheme.primary
         } else {
             MaterialTheme.colorScheme.surfaceContainerLow
@@ -80,20 +107,20 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
     )
 
     ElevatedCard(
-        onClick = onToggle,
         shape = RoundedCornerShape(32.dp),
         colors = CardDefaults.elevatedCardColors(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
+            // Master Dev Mode Toggle Header
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -109,7 +136,7 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
                     Icon(
                         painter = painterResource(R.drawable.ic_dev_mode_tile),
                         contentDescription = null,
-                        tint = if (enabled) {
+                        tint = if (devEnabled) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
                             MaterialTheme.colorScheme.onSurfaceVariant
@@ -118,19 +145,24 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
                     )
                 }
                 Switch(
-                    checked = enabled,
-                    onCheckedChange = { onToggle() }
+                    checked = devEnabled,
+                    onCheckedChange = { onToggleDev() }
                 )
             }
 
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onToggleDev() },
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     text = "Developer Options",
                     style = MaterialTheme.typography.titleMedium,
                     color = contentColor.copy(alpha = 0.7f)
                 )
                 AnimatedContent(
-                    targetState = enabled,
+                    targetState = devEnabled,
                     transitionSpec = { fadeIn() togetherWith fadeOut() },
                     label = "status"
                 ) { on ->
@@ -141,8 +173,8 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
                     )
                 }
                 Text(
-                    text = if (enabled) {
-                        "Tap to turn off before opening a banking app."
+                    text = if (devEnabled) {
+                        "Tap to turn off before opening banking/secured apps."
                     } else {
                         "Tap to turn on when you want to develop."
                     },
@@ -150,73 +182,124 @@ fun HeroToggleCard(enabled: Boolean, onToggle: () -> Unit) {
                     color = contentColor.copy(alpha = 0.7f)
                 )
             }
+
+            FilledTonalButton(
+                onClick = onOpenDeveloperOptions,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_settings_gear),
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Open Developer Options",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            HorizontalDivider(
+                color = contentColor.copy(alpha = 0.15f),
+                thickness = 1.dp,
+                modifier = Modifier.padding(vertical = 2.dp)
+            )
+
+            // Nested Secondary Toggles
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                // USB Debugging Row
+                IntegratedToggleRow(
+                    title = "USB Debugging",
+                    subtitle = if (usbEnabled) "Enabled" else "Disabled",
+                    iconRes = R.drawable.ic_usb_tile,
+                    enabled = usbEnabled,
+                    onToggle = onToggleUsb,
+                    parentContentColor = contentColor,
+                    canAddTile = canAddTile,
+                    onAddTile = onAddUsbTile
+                )
+
+                // Wireless Debugging Row with Direct Pairing/Settings Link
+                IntegratedToggleRow(
+                    title = "Wireless Debugging",
+                    subtitle = if (!isWirelessSupported) {
+                        stringResource(R.string.requires_android_11)
+                    } else if (wirelessEnabled) {
+                        "Enabled • Tap arrow to pair device"
+                    } else {
+                        "Disabled • Tap arrow to configure"
+                    },
+                    iconRes = R.drawable.ic_wireless_tile,
+                    enabled = wirelessEnabled,
+                    onToggle = onToggleWireless,
+                    isSupported = isWirelessSupported,
+                    unsupportedBadge = if (!isWirelessSupported) stringResource(R.string.requires_android_11) else null,
+                    parentContentColor = contentColor,
+                    onOpenSettings = onOpenWirelessDebugging,
+                    canAddTile = canAddTile,
+                    onAddTile = onAddWirelessTile
+                )
+            }
         }
     }
 }
 
 @Composable
-fun SecondaryToggleCard(
+private fun IntegratedToggleRow(
     title: String,
     subtitle: String,
     iconRes: Int,
     enabled: Boolean,
     onToggle: () -> Unit,
+    parentContentColor: Color,
     modifier: Modifier = Modifier,
     isSupported: Boolean = true,
     unsupportedBadge: String? = null,
+    onOpenSettings: (() -> Unit)? = null,
     canAddTile: Boolean = false,
     onAddTile: (() -> Unit)? = null,
 ) {
-    val containerColor by animateColorAsState(
-        targetValue = if (enabled && isSupported) {
-            MaterialTheme.colorScheme.primaryContainer
-        } else {
-            MaterialTheme.colorScheme.surfaceContainer
-        },
-        label = "secContainer"
-    )
-    val contentColor by animateColorAsState(
-        targetValue = if (enabled && isSupported) {
-            MaterialTheme.colorScheme.onPrimaryContainer
-        } else {
-            MaterialTheme.colorScheme.onSurface
-        },
-        label = "secContent"
-    )
-    val iconBadgeColor by animateColorAsState(
-        targetValue = if (enabled && isSupported) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.surfaceContainerHighest
-        },
-        label = "secIconBadge"
-    )
-
-    ElevatedCard(
-        onClick = { if (isSupported) onToggle() },
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = containerColor,
-            contentColor = contentColor
-        ),
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = parentContentColor.copy(alpha = 0.08f),
         modifier = modifier.fillMaxWidth()
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier
+                    .weight(1f)
+                    .clip(RoundedCornerShape(12.dp))
+                    .then(
+                        if (onOpenSettings != null && isSupported) {
+                            Modifier.clickable { onOpenSettings() }
+                        } else {
+                            Modifier.clickable(enabled = isSupported) { onToggle() }
+                        }
+                    )
+                    .padding(vertical = 4.dp, horizontal = 2.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(38.dp)
                         .clip(CircleShape)
-                        .background(iconBadgeColor),
+                        .background(
+                            if (enabled && isSupported) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                parentContentColor.copy(alpha = 0.12f)
+                            }
+                        ),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
@@ -225,20 +308,37 @@ fun SecondaryToggleCard(
                         tint = if (enabled && isSupported) {
                             MaterialTheme.colorScheme.onPrimary
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            parentContentColor.copy(alpha = 0.7f)
                         },
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
-                Spacer(Modifier.width(14.dp))
+                Spacer(Modifier.width(12.dp))
 
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(1.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = parentContentColor
+                        )
+                        if (onOpenSettings != null && isSupported) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_chevron_right),
+                                contentDescription = "Open $title Settings",
+                                tint = parentContentColor.copy(alpha = 0.6f),
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                     if (!isSupported && unsupportedBadge != null) {
                         Text(
                             text = unsupportedBadge,
@@ -249,20 +349,26 @@ fun SecondaryToggleCard(
                         Text(
                             text = subtitle,
                             style = MaterialTheme.typography.bodySmall,
-                            color = contentColor.copy(alpha = 0.7f)
+                            color = parentContentColor.copy(alpha = 0.7f)
                         )
                     }
                 }
             }
 
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 if (canAddTile && onAddTile != null && isSupported) {
-                    IconButton(onClick = onAddTile) {
+                    IconButton(
+                        onClick = onAddTile,
+                        modifier = Modifier.size(36.dp)
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_check),
                             contentDescription = "Add Quick Settings Tile",
-                            tint = contentColor.copy(alpha = 0.7f),
-                            modifier = Modifier.size(20.dp)
+                            tint = parentContentColor.copy(alpha = 0.7f),
+                            modifier = Modifier.size(18.dp)
                         )
                     }
                 }
@@ -341,12 +447,12 @@ fun HowToCard() {
                 fontWeight = FontWeight.Bold
             )
             TipRow(
-                title = "Quick Settings tiles",
-                body = "Pull down the shade and tap Edit to add Dev Mode, USB Debugging, and Wireless Debugging tiles."
+                title = "Quick Settings tiles & dialogs",
+                body = "Pull down the shade to toggle Developer Options, USB, or Wireless Debugging directly."
             )
             TipRow(
                 title = "Adaptive home-screen widget",
-                body = "Add the Loophole widget to your home screen. Resize it horizontally to expose USB and Wireless debugging buttons directly."
+                body = "Add the Loophole widget to your home screen. Resize horizontally for quick one-tap toggle controls."
             )
         }
     }

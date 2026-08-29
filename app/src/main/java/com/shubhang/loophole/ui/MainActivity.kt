@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
                         onToggleUsbDebugging = viewModel::onToggleUsbDebugging,
                         onToggleWirelessDebugging = viewModel::onToggleWirelessDebugging,
                         onOpenDeveloperOptions = { container.developerOptionsLauncher.open() },
+                        onOpenWirelessDebugging = { container.developerOptionsLauncher.openWirelessDebugging() },
                         onAddQuickSettingsTile = { tileType ->
                             container.quickSettingsTileManager.requestAddTile(tileType) { result ->
                                 addTileResult = tileType to result
