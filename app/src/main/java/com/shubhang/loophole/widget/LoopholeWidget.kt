@@ -27,6 +27,7 @@ import androidx.glance.background
 import androidx.glance.currentState
 import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
+import androidx.glance.layout.Column
 import androidx.glance.layout.Row
 import androidx.glance.layout.Spacer
 import androidx.glance.layout.fillMaxHeight
@@ -46,8 +47,6 @@ import com.shubhang.loophole.ui.DevOptionsActivity
 val DevModeEnabledKey = booleanPreferencesKey("dev_mode_enabled")
 val UsbDebugEnabledKey = booleanPreferencesKey("usb_debugging_enabled")
 val WirelessDebugEnabledKey = booleanPreferencesKey("wireless_debugging_enabled")
-
-val EnabledKey = DevModeEnabledKey
 
 class LoopholeWidget : GlanceAppWidget() {
 
@@ -110,25 +109,23 @@ private fun AdaptiveWidgetBody(
 
 @Composable
 private fun CompactWidgetContent(enabled: Boolean) {
-    val chipBackground = if (enabled) GlanceTheme.colors.primary else GlanceTheme.colors.surfaceVariant
-    val chipForeground = if (enabled) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
-    val gearBackground = if (enabled) GlanceTheme.colors.primaryContainer else GlanceTheme.colors.surface
-    val gearForeground = if (enabled) GlanceTheme.colors.onPrimaryContainer else GlanceTheme.colors.onSurfaceVariant
+    val containerBg = if (enabled) GlanceTheme.colors.primaryContainer else GlanceTheme.colors.surfaceVariant
+    val primaryText = if (enabled) GlanceTheme.colors.onPrimaryContainer else GlanceTheme.colors.onSurfaceVariant
+    val accentBg = if (enabled) GlanceTheme.colors.primary else GlanceTheme.colors.surface
+    val accentFg = if (enabled) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
 
     val context = LocalContext.current
-    val toggleDevIntent = Intent(context, ToggleReceiver::class.java).apply {
-        action = ToggleReceiver.ACTION_TOGGLE_DEV_MODE
-        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.DEV_OPTIONS.name)
-    }
+    val toggleDevIntent = ToggleReceiver.createToggleIntent(context, SecureSetting.DEV_OPTIONS)
 
     Row(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(chipBackground)
-            .cornerRadius(28.dp)
-            .padding(horizontal = 18.dp, vertical = 10.dp),
+            .background(containerBg)
+            .cornerRadius(24.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // Toggle touch target
         Row(
             modifier = GlanceModifier
                 .defaultWeight()
@@ -138,36 +135,57 @@ private fun CompactWidgetContent(enabled: Boolean) {
         ) {
             Box(
                 modifier = GlanceModifier
-                    .size(12.dp)
-                    .cornerRadius(6.dp)
-                    .background(chipForeground)
-            ) {}
-            Spacer(GlanceModifier.width(10.dp))
-            Text(
-                text = if (enabled) "ON" else "OFF",
-                style = TextStyle(
-                    color = chipForeground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp
+                    .size(32.dp)
+                    .cornerRadius(16.dp)
+                    .background(accentBg),
+                contentAlignment = Alignment.Center
+            ) {
+                Image(
+                    provider = ImageProvider(R.drawable.ic_dev_mode_tile),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(accentFg),
+                    modifier = GlanceModifier.size(18.dp)
                 )
-            )
+            }
+
+            Spacer(GlanceModifier.width(10.dp))
+
+            Column(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = "Dev Mode",
+                    style = TextStyle(
+                        color = primaryText,
+                        fontWeight = FontWeight.Normal,
+                        fontSize = 12.sp
+                    )
+                )
+                Text(
+                    text = if (enabled) "ON" else "OFF",
+                    style = TextStyle(
+                        color = primaryText,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                )
+            }
         }
 
         Spacer(GlanceModifier.width(8.dp))
 
+        // Settings gear button
         Box(
             modifier = GlanceModifier
-                .size(44.dp)
-                .cornerRadius(22.dp)
-                .background(gearBackground)
+                .size(36.dp)
+                .cornerRadius(18.dp)
+                .background(accentBg)
                 .clickable(actionStartActivity<DevOptionsActivity>()),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_settings_gear),
                 contentDescription = "Open Developer Options",
-                colorFilter = ColorFilter.tint(gearForeground),
-                modifier = GlanceModifier.size(22.dp)
+                colorFilter = ColorFilter.tint(accentFg),
+                modifier = GlanceModifier.size(18.dp)
             )
         }
     }
@@ -175,119 +193,121 @@ private fun CompactWidgetContent(enabled: Boolean) {
 
 @Composable
 private fun ExpandedWidgetContent(devEnabled: Boolean, usbEnabled: Boolean, wirelessEnabled: Boolean) {
-    val devBackground = if (devEnabled) GlanceTheme.colors.primary else GlanceTheme.colors.surfaceVariant
-    val devForeground = if (devEnabled) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
-    val usbBackground = if (usbEnabled) GlanceTheme.colors.primary else GlanceTheme.colors.surfaceVariant
-    val usbForeground = if (usbEnabled) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
-    val wirelessBackground = if (wirelessEnabled) GlanceTheme.colors.primary else GlanceTheme.colors.surfaceVariant
-    val wirelessForeground = if (wirelessEnabled) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
-    val gearBackground = GlanceTheme.colors.surfaceVariant
-    val gearForeground = GlanceTheme.colors.onSurfaceVariant
+    val containerBg = GlanceTheme.colors.surfaceVariant
 
     val context = LocalContext.current
-    val toggleDevIntent = Intent(context, ToggleReceiver::class.java).apply {
-        action = ToggleReceiver.ACTION_TOGGLE_DEV_MODE
-        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.DEV_OPTIONS.name)
-    }
-    val toggleUsbIntent = Intent(context, ToggleReceiver::class.java).apply {
-        action = ToggleReceiver.ACTION_TOGGLE_USB_DEBUG
-        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.USB_DEBUGGING.name)
-    }
-    val toggleWirelessIntent = Intent(context, ToggleReceiver::class.java).apply {
-        action = ToggleReceiver.ACTION_TOGGLE_WIRELESS_DEBUG
-        putExtra(ToggleReceiver.EXTRA_SETTING, SecureSetting.WIRELESS_DEBUGGING.name)
-    }
+    val toggleDevIntent = ToggleReceiver.createToggleIntent(context, SecureSetting.DEV_OPTIONS)
+    val toggleUsbIntent = ToggleReceiver.createToggleIntent(context, SecureSetting.USB_DEBUGGING)
+    val toggleWirelessIntent = ToggleReceiver.createToggleIntent(context, SecureSetting.WIRELESS_DEBUGGING)
 
     Row(
         modifier = GlanceModifier
             .fillMaxSize()
-            .background(GlanceTheme.colors.surface)
-            .cornerRadius(28.dp)
+            .background(containerBg)
+            .cornerRadius(24.dp)
             .padding(6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Dev Mode toggle chip
-        Row(
-            modifier = GlanceModifier
-                .defaultWeight()
-                .fillMaxHeight()
-                .background(devBackground)
-                .cornerRadius(22.dp)
-                .padding(horizontal = 14.dp)
-                .clickable(actionSendBroadcast(toggleDevIntent)),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = GlanceModifier
-                    .size(10.dp)
-                    .cornerRadius(5.dp)
-                    .background(devForeground)
-            ) {}
-            Spacer(GlanceModifier.width(8.dp))
-            Text(
-                text = if (devEnabled) "ON" else "OFF",
-                style = TextStyle(
-                    color = devForeground,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp
-                )
-            )
-        }
+        // Dev Mode Segment
+        WidgetActionSegment(
+            title = "Dev",
+            statusText = if (devEnabled) "ON" else "OFF",
+            iconRes = R.drawable.ic_dev_mode_tile,
+            isActive = devEnabled,
+            onClick = toggleDevIntent,
+            modifier = GlanceModifier.defaultWeight()
+        )
 
         Spacer(GlanceModifier.width(6.dp))
 
-        // USB Debug toggle chip
-        Box(
-            modifier = GlanceModifier
-                .size(44.dp)
-                .cornerRadius(22.dp)
-                .background(usbBackground)
-                .clickable(actionSendBroadcast(toggleUsbIntent)),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.ic_usb_tile),
-                contentDescription = "Toggle USB Debugging",
-                colorFilter = ColorFilter.tint(usbForeground),
-                modifier = GlanceModifier.size(22.dp)
-            )
-        }
+        // USB Debugging Segment
+        WidgetActionSegment(
+            title = "USB",
+            statusText = if (usbEnabled) "ON" else "OFF",
+            iconRes = R.drawable.ic_usb_tile,
+            isActive = usbEnabled,
+            onClick = toggleUsbIntent,
+            modifier = GlanceModifier.defaultWeight()
+        )
 
         Spacer(GlanceModifier.width(6.dp))
 
-        // Wireless Debug toggle chip
-        Box(
-            modifier = GlanceModifier
-                .size(44.dp)
-                .cornerRadius(22.dp)
-                .background(wirelessBackground)
-                .clickable(actionSendBroadcast(toggleWirelessIntent)),
-            contentAlignment = Alignment.Center
-        ) {
-            Image(
-                provider = ImageProvider(R.drawable.ic_wireless_tile),
-                contentDescription = "Toggle Wireless Debugging",
-                colorFilter = ColorFilter.tint(wirelessForeground),
-                modifier = GlanceModifier.size(22.dp)
-            )
-        }
+        // Wireless Debugging Segment
+        WidgetActionSegment(
+            title = "Wireless",
+            statusText = if (wirelessEnabled) "ON" else "OFF",
+            iconRes = R.drawable.ic_wireless_tile,
+            isActive = wirelessEnabled,
+            onClick = toggleWirelessIntent,
+            modifier = GlanceModifier.defaultWeight()
+        )
 
         Spacer(GlanceModifier.width(6.dp))
 
-        // Gear icon
+        // Settings Shortcut Button
         Box(
             modifier = GlanceModifier
-                .size(44.dp)
-                .cornerRadius(22.dp)
-                .background(gearBackground)
+                .size(40.dp)
+                .cornerRadius(20.dp)
+                .background(GlanceTheme.colors.surface)
                 .clickable(actionStartActivity<DevOptionsActivity>()),
             contentAlignment = Alignment.Center
         ) {
             Image(
                 provider = ImageProvider(R.drawable.ic_settings_gear),
                 contentDescription = "Open Developer Options",
-                colorFilter = ColorFilter.tint(gearForeground),
-                modifier = GlanceModifier.size(22.dp)
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.onSurfaceVariant),
+                modifier = GlanceModifier.size(18.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun WidgetActionSegment(
+    title: String,
+    statusText: String,
+    iconRes: Int,
+    isActive: Boolean,
+    onClick: Intent,
+    modifier: GlanceModifier = GlanceModifier,
+) {
+    val bg = if (isActive) GlanceTheme.colors.primary else GlanceTheme.colors.surface
+    val fg = if (isActive) GlanceTheme.colors.onPrimary else GlanceTheme.colors.onSurfaceVariant
+
+    Row(
+        modifier = modifier
+            .fillMaxHeight()
+            .background(bg)
+            .cornerRadius(18.dp)
+            .clickable(actionSendBroadcast(onClick))
+            .padding(horizontal = 8.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Image(
+            provider = ImageProvider(iconRes),
+            contentDescription = title,
+            colorFilter = ColorFilter.tint(fg),
+            modifier = GlanceModifier.size(16.dp)
+        )
+        Spacer(GlanceModifier.width(6.dp))
+        Column(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = title,
+                style = TextStyle(
+                    color = fg,
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 10.sp
+                )
+            )
+            Text(
+                text = statusText,
+                style = TextStyle(
+                    color = fg,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
             )
         }
     }

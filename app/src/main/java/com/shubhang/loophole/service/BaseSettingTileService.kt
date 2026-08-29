@@ -85,14 +85,19 @@ abstract class BaseSettingTileService(
     protected fun openApp() {
         val launch = packageManager.getLaunchIntentForPackage(packageName)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) ?: return
+        startActivityAndCollapseSafely(launch)
+    }
+
+    @SuppressLint("StartActivityAndCollapseDeprecated")
+    private fun startActivityAndCollapseSafely(intent: Intent) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             val pending = PendingIntent.getActivity(
-                this, 0, launch, PendingIntent.FLAG_IMMUTABLE
+                this, 0, intent, PendingIntent.FLAG_IMMUTABLE
             )
             startActivityAndCollapse(pending)
         } else {
             @Suppress("DEPRECATION")
-            startActivityAndCollapse(launch)
+            startActivityAndCollapse(intent)
         }
     }
 }

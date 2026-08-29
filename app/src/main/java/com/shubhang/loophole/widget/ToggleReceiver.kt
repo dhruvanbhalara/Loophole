@@ -29,5 +29,15 @@ class ToggleReceiver : BroadcastReceiver() {
         const val ACTION_TOGGLE_USB_DEBUG = "com.shubhang.loophole.action.TOGGLE_USB_DEBUG"
         const val ACTION_TOGGLE_WIRELESS_DEBUG = "com.shubhang.loophole.action.TOGGLE_WIRELESS_DEBUG"
         const val EXTRA_SETTING = "com.shubhang.loophole.extra.SETTING"
+
+        fun createToggleIntent(context: Context, setting: SecureSetting): Intent =
+            Intent(context, ToggleReceiver::class.java).apply {
+                action = when (setting) {
+                    SecureSetting.USB_DEBUGGING -> ACTION_TOGGLE_USB_DEBUG
+                    SecureSetting.WIRELESS_DEBUGGING -> ACTION_TOGGLE_WIRELESS_DEBUG
+                    SecureSetting.DEV_OPTIONS -> ACTION_TOGGLE_DEV_MODE
+                }
+                putExtra(EXTRA_SETTING, setting.name)
+            }
     }
 }
