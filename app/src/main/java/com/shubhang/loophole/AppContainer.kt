@@ -5,6 +5,7 @@ import com.shubhang.loophole.settings.AndroidSecureSettingsSource
 import com.shubhang.loophole.settings.DevSettingsRepository
 import com.shubhang.loophole.settings.DeveloperOptionsLauncher
 import com.shubhang.loophole.settings.QuickSettingsTileManager
+import com.shubhang.loophole.settings.SharedPreferencesDebuggingStateStore
 import com.shubhang.loophole.widget.WidgetUpdater
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,12 @@ class AppContainer(context: Context) {
 
     val widgetUpdater: WidgetUpdater by lazy { WidgetUpdater(appContext) }
 
+    private val debugStateStore by lazy {
+        SharedPreferencesDebuggingStateStore(
+            appContext.getSharedPreferences("dev_settings_backup", Context.MODE_PRIVATE)
+        )
+    }
+
     /**
      * Unified setting repository. State changes across all three settings
      * (whether in-app, from QS tiles, via ADB, or in system Settings) trigger
@@ -34,6 +41,7 @@ class AppContainer(context: Context) {
     val devSettings: DevSettingsRepository by lazy {
         DevSettingsRepository(
             source = secureSettings,
+            stateStore = debugStateStore,
             onChanged = { widgetUpdater.refresh() }
         ).also { repo ->
             appScope.launch {

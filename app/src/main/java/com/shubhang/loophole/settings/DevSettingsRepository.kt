@@ -21,6 +21,7 @@ class DevSettingsRepository(
     private val source: SecureSettingsSource,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val onChanged: suspend (Boolean) -> Unit = {},
+    private val stateStore: DebuggingStateStore = InMemoryDebuggingStateStore(),
 ) {
 
     /** Current value, then every later change, including changes made outside the app. */
@@ -46,18 +47,40 @@ class DevSettingsRepository(
 
     suspend fun setEnabled(setting: SecureSetting, enabled: Boolean): SettingsWriteResult = withContext(ioDispatcher) {
         if (setting == SecureSetting.DEV_OPTIONS) {
-            // When toggling Developer Options (both ON and OFF), ensure USB and Wireless
-            // debugging flags are disabled so turning Dev Options OFF fully shuts down
-            // all debugging sessions, and turning it ON starts clean.
-            for (debugSetting in SecureSetting.DEBUGGING) {
-                if (!source.write(debugSetting, false)) {
+            if (!enabled) {
+                // Developer Options is being disabled:
+                // Snapshot active debugging flags and stop all debugging sessions immediately.
+                for (debugSetting in SecureSetting.DEBUGGING) {
+                    val wasActive = source.read(debugSetting)
+                    stateStore.saveState(debugSetting, wasActive)
+                    if (!source.write(debugSetting, false)) {
+                        return@withContext SettingsWriteResult.PermissionDenied
+                    }
+                }
+            } else {
+                // Developer Options is being enabled:
+                // Turn on Developer Options, then restore previously active debugging flags.
+                if (!source.write(SecureSetting.DEV_OPTIONS, true)) {
                     return@withContext SettingsWriteResult.PermissionDenied
                 }
+                for (debugSetting in SecureSetting.DEBUGGING) {
+                    if (stateStore.getSavedState(debugSetting)) {
+                        if (!source.write(debugSetting, true)) {
+                            return@withContext SettingsWriteResult.PermissionDenied
+                        }
+                    }
+                }
+                val stored = source.read(SecureSetting.DEV_OPTIONS)
+                onChanged(stored)
+                return@withContext SettingsWriteResult.Success(stored)
             }
         }
 
         if (!source.write(setting, enabled)) {
             return@withContext SettingsWriteResult.PermissionDenied
+        }
+        if (setting in SecureSetting.DEBUGGING) {
+            stateStore.saveState(setting, enabled)
         }
         // Read back rather than trusting the requested value, so callers always
         // reflect what the system actually stored.
